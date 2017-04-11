@@ -1,0 +1,139 @@
+﻿using Cmas.BusinessLayers.TimeSheets.CommandsContexts;
+using Cmas.BusinessLayers.TimeSheets.Criteria;
+using Cmas.BusinessLayers.TimeSheets.Entities;
+using Cmas.Infrastructure.Domain.Commands;
+using Cmas.Infrastructure.Domain.Criteria;
+using Cmas.Infrastructure.Domain.Queries;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Cmas.BusinessLayers.TimeSheets
+{
+    public class TimeSheetsBusinessLayer
+    {
+        private readonly ICommandBuilder _commandBuilder;
+        private readonly IQueryBuilder _queryBuilder;
+
+        public TimeSheetsBusinessLayer(ICommandBuilder commandBuilder, IQueryBuilder queryBuilder)
+        {
+            _commandBuilder = commandBuilder;
+            _queryBuilder = queryBuilder;
+        }
+
+        /// <summary>
+        /// Создать табель учета рабочего времени
+        /// </summary>
+        /// <param name="callOffOrderId">ID наряд заказа</param>
+        /// <returns>ID созданного табеля</returns>
+        public async Task<string> CreateTimeSheet(string callOffOrderId)
+        {
+            var timeSheet = new TimeSheet();
+
+            timeSheet.CreatedAt = DateTime.UtcNow;
+            timeSheet.CreatedAt = DateTime.UtcNow;
+            timeSheet.CallOffOrderId = callOffOrderId;
+            timeSheet.Status = TimeSheetStatus.Empty;
+
+            var context = new CreateTimeSheetCommandContext
+            {
+                TimeSheet = timeSheet
+            };
+
+            context = await _commandBuilder.Execute(context);
+
+            return context.Id;
+        }
+
+        /// <summary>
+        /// Получить табель по ID
+        /// </summary>
+        public async Task<TimeSheet> GetTimeSheet(string timeSheetId)
+        {
+            return await _queryBuilder.For<Task<TimeSheet>>().With(new FindById(timeSheetId));
+        }
+
+        /// <summary>
+        /// Получить все табели
+        /// </summary>
+        public async Task<IEnumerable<TimeSheet>> GetTimeSheets()
+        {
+            return await _queryBuilder.For<Task<IEnumerable<TimeSheet>>>().With(new AllEntities());
+        }
+
+        /// <summary>
+        /// Получить табели по наряд заказу
+        /// </summary>
+        /// <param name="callOffOrderId">ID наряд заказа</param
+        public async Task<IEnumerable<TimeSheet>> GetTimeSheetsByCallOffOrderId(string callOffOrderId)
+        {
+            return await _queryBuilder.For<Task<IEnumerable<TimeSheet>>>()
+                .With(new FindByCallOffOrderId(callOffOrderId));
+        }
+
+        /// <summary>
+        /// Удалить табель учета рабочего времени
+        /// </summary>
+        /// <param name="timeSheetId">ID табеля</param>
+        public async Task<string> DeleteTimeSheet(string timeSheetId)
+        {
+            var context = new DeleteTimeSheetCommandContext
+            {
+                Id = timeSheetId
+            };
+
+            context = await _commandBuilder.Execute(context);
+
+            return context.Id;
+        }
+
+        /// <summary>
+        /// Обновить табель
+        /// </summary> 
+        /// <returns>ID табеля</returns>
+        public async Task<string> UpdateTimeSheet(TimeSheet timeSheet)
+        {
+            timeSheet.UpdatedAt = DateTime.UtcNow;
+
+            var context = new UpdateTimeSheetCommandContext
+            {
+                TimeSheet = timeSheet
+            };
+
+            context = await _commandBuilder.Execute(context);
+
+            return context.TimeSheet.Id;
+        }
+
+        public static double GetAmount(double rate, TimeUnit timeUnit, IEnumerable<double> times)
+        {
+            double result = 0;
+            int day = 1;
+
+            if (times.Count() > 31)
+                throw new Exception(String.Format("Wrong days count: ({0})", times.Count()));
+
+            foreach (double time in times)
+            {
+                switch (timeUnit)
+                {
+                    case TimeUnit.Day:
+                        if (time > 1 || time < 0)
+                            throw new Exception(String.Format("Wrong day: {0}", time));
+                        break;
+                    case TimeUnit.Hour:
+                        if (time > 24 || time < 0)
+                            throw new Exception(String.Format("Wrong hours: {0}", time));
+                        break;
+                }
+
+                result += rate * time;
+
+                day++;
+            }
+
+            return result;
+        }
+    }
+}
