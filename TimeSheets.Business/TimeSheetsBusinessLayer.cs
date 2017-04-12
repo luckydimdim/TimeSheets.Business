@@ -27,12 +27,15 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// </summary>
         /// <param name="callOffOrderId">ID наряд заказа</param>
         /// <returns>ID созданного табеля</returns>
-        public async Task<string> CreateTimeSheet(string callOffOrderId)
+        public async Task<string> CreateTimeSheet(string callOffOrderId, int month, int year)
         {
             var timeSheet = new TimeSheet();
 
             timeSheet.CreatedAt = DateTime.UtcNow;
             timeSheet.CreatedAt = DateTime.UtcNow;
+            timeSheet.CallOffOrderId = callOffOrderId;
+            timeSheet.Month = month;
+            timeSheet.Year = year;
             timeSheet.CallOffOrderId = callOffOrderId;
             timeSheet.Status = TimeSheetStatus.Empty;
 
@@ -94,7 +97,11 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// <returns>ID табеля</returns>
         public async Task<string> UpdateTimeSheet(TimeSheet timeSheet)
         {
+            if (timeSheet.Status == TimeSheetStatus.Done)
+                throw new Exception("Cannot update time sheet with status " + timeSheet.Status.ToString());
+
             timeSheet.UpdatedAt = DateTime.UtcNow;
+            timeSheet.Status = TimeSheetStatus.Creation;
 
             var context = new UpdateTimeSheetCommandContext
             {
@@ -106,29 +113,29 @@ namespace Cmas.BusinessLayers.TimeSheets
             return context.TimeSheet.Id;
         }
 
-        public static double GetAmount(double rate, TimeUnit timeUnit, IEnumerable<double> times)
+        public static double GetAmount(double rate, TimeUnit timeUnit, IEnumerable<double> spentTimes)
         {
             double result = 0;
             int day = 1;
 
-            if (times.Count() > 31)
-                throw new Exception(String.Format("Wrong days count: ({0})", times.Count()));
+            if (spentTimes.Count() > 31)
+                throw new Exception(String.Format("Wrong days count: ({0})", spentTimes.Count()));
 
-            foreach (double time in times)
+            foreach (double spentTime in spentTimes)
             {
                 switch (timeUnit)
                 {
                     case TimeUnit.Day:
-                        if (time > 1 || time < 0)
-                            throw new Exception(String.Format("Wrong day: {0}", time));
+                        if (spentTime > 1 || spentTime < 0)
+                            throw new Exception(String.Format("Wrong day: {0}", spentTime));
                         break;
                     case TimeUnit.Hour:
-                        if (time > 24 || time < 0)
-                            throw new Exception(String.Format("Wrong hours: {0}", time));
+                        if (spentTime > 24 || spentTime < 0)
+                            throw new Exception(String.Format("Wrong hours: {0}", spentTime));
                         break;
                 }
 
-                result += rate * time;
+                result += rate * spentTime;
 
                 day++;
             }

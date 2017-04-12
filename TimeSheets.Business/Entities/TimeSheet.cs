@@ -41,24 +41,32 @@ namespace Cmas.BusinessLayers.TimeSheets.Entities
         /// <summary>
         /// Год
         /// </summary>
-        public int? Year;
+        public int Year;
 
         /// <summary>
         /// Месяц
         /// </summary>
-        public int? Month;
+        public int Month;
          
         /// <summary>
-        /// Рабочее время в разрезе работ
+        /// Потраченное время
         /// Dictionary<{ID ставки}, IEnumerable<{время по каждому дню в месяце}>>
         /// </summary>
-        public Dictionary<string, IEnumerable<double>> Times;
+        public Dictionary<string, IEnumerable<double>> SpentTime;
 
+        /// <summary>
+        /// Статус табеля
+        /// </summary>
         public TimeSheetStatus Status;
 
+        /// <summary>
+        /// Сумма по табелю
+        /// </summary>
+        public double Amount;
+          
         public TimeSheet()
         {
-            Times = new Dictionary<string, IEnumerable<double>>();
+            SpentTime = new Dictionary<string, IEnumerable<double>>();
             Status = TimeSheetStatus.None;
         }
 
