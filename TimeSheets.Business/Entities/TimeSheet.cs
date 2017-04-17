@@ -24,6 +24,11 @@ namespace Cmas.BusinessLayers.TimeSheets.Entities
         public string CallOffOrderId;
 
         /// <summary>
+        /// Идентификатор заявки на проверку
+        /// </summary>
+        public string RequestId;
+
+        /// <summary>
         /// Дата и время создания
         /// </summary>
         public DateTime CreatedAt;
@@ -68,6 +73,7 @@ namespace Cmas.BusinessLayers.TimeSheets.Entities
         {
             SpentTime = new Dictionary<string, IEnumerable<double>>();
             Status = TimeSheetStatus.None;
+            RequestId = null;
         }
 
     }
