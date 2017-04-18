@@ -23,6 +23,29 @@ namespace Cmas.BusinessLayers.TimeSheets
         }
 
         /// <summary>
+        /// Получить название статуса.
+        /// TODO: Перенести в класс - локализатор
+        /// </summary>
+        private static string GetStatusName(TimeSheetStatus status)
+        {
+            switch (status)
+            {
+                case TimeSheetStatus.Empty:
+                    return "Не заполнен";
+                case TimeSheetStatus.Creation:
+                    return "Заполнен";
+                case TimeSheetStatus.Validation:
+                    return "На проверке";
+                case TimeSheetStatus.Correction:
+                    return "Содержит ошибки";
+                case TimeSheetStatus.Done:
+                    return "Проверена";
+                default:
+                    return "";
+            }
+        }
+
+        /// <summary>
         /// Создать табель учета рабочего времени
         /// </summary>
         /// <param name="callOffOrderId">ID наряд заказа</param>
@@ -32,7 +55,7 @@ namespace Cmas.BusinessLayers.TimeSheets
             var timeSheet = new TimeSheet();
 
             timeSheet.CreatedAt = DateTime.UtcNow;
-            timeSheet.CreatedAt = DateTime.UtcNow;
+            timeSheet.UpdatedAt = DateTime.UtcNow;
             timeSheet.CallOffOrderId = callOffOrderId;
             timeSheet.Month = month;
             timeSheet.Year = year;
