@@ -26,14 +26,14 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// Получить название статуса.
         /// TODO: Перенести в класс - локализатор
         /// </summary>
-        private static string GetStatusName(TimeSheetStatus status)
+        public static string GetStatusName(TimeSheetStatus status)
         {
             switch (status)
             {
                 case TimeSheetStatus.Empty:
-                    return "Не заполнен";
+                    return "Пустой";
                 case TimeSheetStatus.Creation:
-                    return "Заполнен";
+                    return "Не заполнен";
                 case TimeSheetStatus.Validation:
                     return "На проверке";
                 case TimeSheetStatus.Correction:
