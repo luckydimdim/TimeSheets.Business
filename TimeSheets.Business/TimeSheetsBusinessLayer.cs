@@ -150,31 +150,17 @@ namespace Cmas.BusinessLayers.TimeSheets
         public static double GetAmount(double rate, TimeUnit timeUnit, IEnumerable<double> spentTimes)
         {
             double result = 0;
-            int day = 1;
 
             if (spentTimes.Count() > 31)
-                throw new Exception(String.Format("Wrong days count: ({0})", spentTimes.Count()));
+                throw new ArgumentException(String.Format("Wrong days count: ({0})", spentTimes.Count()));
 
             foreach (double spentTime in spentTimes)
             {
-                switch (timeUnit)
-                {
-                    case TimeUnit.Day:
-                        if (spentTime > 1 || spentTime < 0)
-                            throw new Exception(String.Format("Wrong day: {0}", spentTime));
-                        break;
-                    case TimeUnit.Hour:
-                        if (spentTime > 24 || spentTime < 0)
-                            throw new Exception(String.Format("Wrong hours: {0}", spentTime));
-                        break;
-                }
-
                 result += rate * spentTime;
-
-                day++;
             }
 
             return result;
         }
+         
     }
 }
