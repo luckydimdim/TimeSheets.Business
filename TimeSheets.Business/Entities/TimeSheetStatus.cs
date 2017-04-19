@@ -1,5 +1,4 @@
-﻿ 
-namespace Cmas.BusinessLayers.TimeSheets.Entities
+﻿namespace Cmas.BusinessLayers.TimeSheets.Entities
 {
     /// <summary>
     /// Статус табеля
@@ -19,21 +18,26 @@ namespace Cmas.BusinessLayers.TimeSheets.Entities
         /// <summary>
         ///  В процессе составления (было редактирование)
         /// </summary>
-        Creation = 2,
+        Creating = 2,
+
+        /// <summary>
+        ///  Редактирование завершено
+        /// </summary>
+        Created = 3,
 
         /// <summary>
         /// На проверке
         /// </summary>
-        Validation = 3,
+        Validation = 4,
 
         /// <summary>
         /// На исправлении
         /// </summary>
-        Correction = 4,
+        Correction = 5,
 
         /// <summary>
         /// Проверена, согласована
         /// </summary>
-        Done = 5,
+        Done = 6,
     }
 }

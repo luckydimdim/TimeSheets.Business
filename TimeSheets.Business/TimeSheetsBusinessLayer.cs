@@ -32,8 +32,10 @@ namespace Cmas.BusinessLayers.TimeSheets
             {
                 case TimeSheetStatus.Empty:
                     return "Пустой";
-                case TimeSheetStatus.Creation:
-                    return "Не заполнен";
+                case TimeSheetStatus.Creating:
+                    return "Редактирование";
+                case TimeSheetStatus.Created:
+                    return "Редактирование завершено";
                 case TimeSheetStatus.Validation:
                     return "На проверке";
                 case TimeSheetStatus.Correction:
@@ -146,7 +148,7 @@ namespace Cmas.BusinessLayers.TimeSheets
                 throw new Exception("Cannot update time sheet with status " + timeSheet.Status.ToString());
 
             timeSheet.UpdatedAt = DateTime.UtcNow;
-            timeSheet.Status = TimeSheetStatus.Creation;
+            timeSheet.Status = TimeSheetStatus.Creating;
 
             var context = new UpdateTimeSheetCommandContext
             {
