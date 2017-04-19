@@ -98,6 +98,17 @@ namespace Cmas.BusinessLayers.TimeSheets
                 .With(new FindByCallOffOrderId(callOffOrderId));
         }
 
+
+        /// <summary>
+        /// Получить табели по заявке
+        /// </summary>
+        /// <param name="requestId">ID заявки</param
+        public async Task<IEnumerable<string>> GetTimeSheetsByRequestId(string requestId)
+        {
+            return await _queryBuilder.For<Task<IEnumerable<string>>>()
+                .With(new FindByRequestId(requestId));
+        }
+
         /// <summary>
         /// Получить табель по наряд заказу и заявке
         /// </summary>
