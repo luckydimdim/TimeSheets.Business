@@ -63,6 +63,7 @@ namespace Cmas.BusinessLayers.TimeSheets
             timeSheet.Year = year;
             timeSheet.RequestId = requestId;
             timeSheet.Status = TimeSheetStatus.Empty;
+            timeSheet.Id = null;
 
             var context = new CreateTimeSheetCommandContext
             {
