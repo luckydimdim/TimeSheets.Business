@@ -101,14 +101,13 @@ namespace Cmas.BusinessLayers.TimeSheets
                 .With(new FindByCallOffOrderId(callOffOrderId));
         }
 
-
         /// <summary>
         /// Получить табели по заявке
         /// </summary>
         /// <param name="requestId">ID заявки</param
-        public async Task<IEnumerable<string>> GetTimeSheetsByRequestId(string requestId)
+        public async Task<IEnumerable<TimeSheet>> GetTimeSheetsByRequestId(string requestId)
         {
-            return await _queryBuilder.For<Task<IEnumerable<string>>>()
+            return await _queryBuilder.For<Task<IEnumerable<TimeSheet>>>()
                 .With(new FindByRequestId(requestId));
         }
 
