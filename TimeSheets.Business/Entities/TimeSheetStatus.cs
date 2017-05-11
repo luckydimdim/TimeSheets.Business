@@ -28,16 +28,21 @@
         /// <summary>
         /// На проверке
         /// </summary>
-        Validation = 4,
+        Approving = 4,
 
         /// <summary>
         /// На исправлении
         /// </summary>
-        Correction = 5,
+        Correcting = 5,
+
+        /// <summary>
+        /// Исправленно
+        /// </summary>
+        Corrected = 6,
 
         /// <summary>
         /// Проверена, согласована
         /// </summary>
-        Done = 6,
+        Approved = 7,
     }
 }

@@ -4,10 +4,13 @@ using Cmas.BusinessLayers.TimeSheets.Entities;
 using Cmas.Infrastructure.Domain.Commands;
 using Cmas.Infrastructure.Domain.Criteria;
 using Cmas.Infrastructure.Domain.Queries;
+using Cmas.Infrastructure.ErrorHandler;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Cmas.Infrastructure.Security;
 
 namespace Cmas.BusinessLayers.TimeSheets
 {
@@ -15,11 +18,14 @@ namespace Cmas.BusinessLayers.TimeSheets
     {
         private readonly ICommandBuilder _commandBuilder;
         private readonly IQueryBuilder _queryBuilder;
+        private readonly ClaimsPrincipal _claimsPrincipal;
 
-        public TimeSheetsBusinessLayer(ICommandBuilder commandBuilder, IQueryBuilder queryBuilder)
+        public TimeSheetsBusinessLayer(IServiceProvider serviceProvider, ClaimsPrincipal claimsPrincipal)
         {
-            _commandBuilder = commandBuilder;
-            _queryBuilder = queryBuilder;
+            _claimsPrincipal = claimsPrincipal;
+            _commandBuilder = (ICommandBuilder)serviceProvider.GetService(typeof(ICommandBuilder));
+            _queryBuilder = (IQueryBuilder)serviceProvider.GetService(typeof(IQueryBuilder));
+
         }
 
         /// <summary>
@@ -36,11 +42,13 @@ namespace Cmas.BusinessLayers.TimeSheets
                     return "Редактирование";
                 case TimeSheetStatus.Created:
                     return "Редактирование завершено";
-                case TimeSheetStatus.Validation:
+                case TimeSheetStatus.Corrected:
+                    return "Исправление завершено";
+                case TimeSheetStatus.Approving:
                     return "На проверке";
-                case TimeSheetStatus.Correction:
+                case TimeSheetStatus.Correcting:
                     return "Содержит ошибки";
-                case TimeSheetStatus.Done:
+                case TimeSheetStatus.Approved:
                     return "Проверена";
                 default:
                     return "";
@@ -144,12 +152,13 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// <returns>ID табеля</returns>
         public async Task<string> UpdateTimeSheet(TimeSheet timeSheet)
         {
-            if (timeSheet.Status == TimeSheetStatus.Done)
-                throw new Exception("Cannot update time sheet with status " + timeSheet.Status.ToString());
-
             timeSheet.UpdatedAt = DateTime.UtcNow;
-            timeSheet.Status = TimeSheetStatus.Creating;
 
+            if (timeSheet.Status == TimeSheetStatus.Empty)
+            {
+                timeSheet.Status = TimeSheetStatus.Creating;
+            }
+            
             var context = new UpdateTimeSheetCommandContext
             {
                 TimeSheet = timeSheet
@@ -158,6 +167,81 @@ namespace Cmas.BusinessLayers.TimeSheets
             context = await _commandBuilder.Execute(context);
 
             return context.TimeSheet.Id;
+        }
+
+        public async Task UpdateTimeSheetStatus(TimeSheet timeSheet, TimeSheetStatus status)
+        {
+            if (status == TimeSheetStatus.None)
+                throw new ArgumentException("status");
+
+            if (status == timeSheet.Status)
+                return;
+
+            switch (status)
+            {
+                case TimeSheetStatus.Empty:
+                    throw new GeneralServiceErrorException(
+                        string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                case TimeSheetStatus.Creating:
+                    if (timeSheet.Status != TimeSheetStatus.Empty && timeSheet.Status != TimeSheetStatus.Created)
+                        throw new GeneralServiceErrorException(
+                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                    else
+                        timeSheet.Status = status;
+                    break;
+                case TimeSheetStatus.Created: 
+                    if (timeSheet.Status != TimeSheetStatus.Empty && timeSheet.Status != TimeSheetStatus.Creating && timeSheet.Status != TimeSheetStatus.Approving)
+                        throw new GeneralServiceErrorException(
+                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                    else
+                        timeSheet.Status = status;
+                    break;
+                case TimeSheetStatus.Approving:
+                    if (timeSheet.Status != TimeSheetStatus.Corrected && timeSheet.Status != TimeSheetStatus.Created)
+                        throw new GeneralServiceErrorException(
+                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                    else
+                        timeSheet.Status = status;
+                    break;
+                case TimeSheetStatus.Correcting:
+                    if (timeSheet.Status != TimeSheetStatus.Approving && timeSheet.Status != TimeSheetStatus.Corrected)
+                        throw new GeneralServiceErrorException(
+                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                    else
+                    {
+                        if (timeSheet.Status == TimeSheetStatus.Approving  && !_claimsPrincipal.HasRoles(new []{ Role.Customer }))
+                            throw new ForbiddenErrorException();
+
+                        timeSheet.Status = status;
+                    }
+                    break;
+                case TimeSheetStatus.Corrected:
+                    if (timeSheet.Status != TimeSheetStatus.Correcting)
+                        throw new GeneralServiceErrorException(
+                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                    else
+                    {
+                        timeSheet.Status = status;
+                    }
+                    break;
+                case TimeSheetStatus.Approved:
+                    if (timeSheet.Status != TimeSheetStatus.Approving)
+                        throw new GeneralServiceErrorException(
+                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                    else
+                    {
+                        if (!_claimsPrincipal.HasRoles(new[] { Role.Customer }))
+                            throw new ForbiddenErrorException();
+
+                        timeSheet.Status = status;
+                    }
+                    break;
+                
+                default:
+                    throw new GeneralServiceErrorException("unknown status");
+            }
+
+            await UpdateTimeSheet(timeSheet);
         }
 
         public static double GetAmount(double rate, TimeUnit timeUnit, IEnumerable<double> spentTimes)
