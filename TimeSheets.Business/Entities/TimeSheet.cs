@@ -68,7 +68,12 @@ namespace Cmas.BusinessLayers.TimeSheets.Entities
         /// Сумма по табелю
         /// </summary>
         public double Amount;
-          
+
+        /// <summary>
+        /// Валюта
+        /// </summary>
+        public string CurrencySysName;
+
         public TimeSheet()
         {
             SpentTime = new Dictionary<string, IEnumerable<double>>();

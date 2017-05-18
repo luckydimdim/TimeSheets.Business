@@ -60,7 +60,7 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// </summary>
         /// <param name="callOffOrderId">ID наряд заказа</param>
         /// <returns>ID созданного табеля</returns>
-        public async Task<string> CreateTimeSheet(string callOffOrderId, int month, int year, string requestId = null)
+        public async Task<string> CreateTimeSheet(string callOffOrderId, int month, int year, string requestId, string currencySysName)
         {
             var timeSheet = new TimeSheet();
 
@@ -70,6 +70,7 @@ namespace Cmas.BusinessLayers.TimeSheets
             timeSheet.Month = month;
             timeSheet.Year = year;
             timeSheet.RequestId = requestId;
+            timeSheet.CurrencySysName = currencySysName;
             timeSheet.Status = TimeSheetStatus.Empty;
             timeSheet.Id = null;
 
