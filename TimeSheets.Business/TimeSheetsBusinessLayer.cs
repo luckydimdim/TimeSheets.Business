@@ -23,9 +23,8 @@ namespace Cmas.BusinessLayers.TimeSheets
         public TimeSheetsBusinessLayer(IServiceProvider serviceProvider, ClaimsPrincipal claimsPrincipal)
         {
             _claimsPrincipal = claimsPrincipal;
-            _commandBuilder = (ICommandBuilder)serviceProvider.GetService(typeof(ICommandBuilder));
-            _queryBuilder = (IQueryBuilder)serviceProvider.GetService(typeof(IQueryBuilder));
-
+            _commandBuilder = (ICommandBuilder) serviceProvider.GetService(typeof(ICommandBuilder));
+            _queryBuilder = (IQueryBuilder) serviceProvider.GetService(typeof(IQueryBuilder));
         }
 
         /// <summary>
@@ -60,8 +59,29 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// </summary>
         /// <param name="callOffOrderId">ID наряд заказа</param>
         /// <returns>ID созданного табеля</returns>
-        public async Task<string> CreateTimeSheet(string callOffOrderId, int month, int year, string requestId, string currencySysName)
+        public async Task<string> CreateTimeSheet(string callOffOrderId, int month, int year, string requestId,
+            string currencySysName)
         {
+            if (string.IsNullOrEmpty(callOffOrderId))
+            {
+                throw new ArgumentException("callOffOrderId");
+            }
+
+            if (string.IsNullOrEmpty(requestId))
+            {
+                throw new ArgumentException("requestId");
+            }
+
+            if (month < 1 || month > 12)
+            {
+                throw new ArgumentException("month");
+            }
+
+            if (year < 2000)
+            {
+                throw new ArgumentException("year");
+            }
+
             var timeSheet = new TimeSheet();
 
             timeSheet.CreatedAt = DateTime.UtcNow;
@@ -89,6 +109,11 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// </summary>
         public async Task<TimeSheet> GetTimeSheet(string timeSheetId)
         {
+            if (string.IsNullOrEmpty(timeSheetId))
+            {
+                throw new ArgumentException("timeSheetId");
+            }
+
             return await _queryBuilder.For<Task<TimeSheet>>().With(new FindById(timeSheetId));
         }
 
@@ -106,6 +131,11 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// <param name="callOffOrderId">ID наряд заказа</param
         public async Task<IEnumerable<TimeSheet>> GetTimeSheetsByCallOffOrderId(string callOffOrderId)
         {
+            if (string.IsNullOrEmpty(callOffOrderId))
+            {
+                throw new ArgumentException("callOffOrderId");
+            }
+
             return await _queryBuilder.For<Task<IEnumerable<TimeSheet>>>()
                 .With(new FindByCallOffOrderId(callOffOrderId));
         }
@@ -116,6 +146,11 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// <param name="requestId">ID заявки</param
         public async Task<IEnumerable<TimeSheet>> GetTimeSheetsByRequestId(string requestId)
         {
+            if (string.IsNullOrEmpty(requestId))
+            {
+                throw new ArgumentException("requestId");
+            }
+
             return await _queryBuilder.For<Task<IEnumerable<TimeSheet>>>()
                 .With(new FindByRequestId(requestId));
         }
@@ -127,6 +162,16 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// <param name="requestId">ID заявки</param
         public async Task<TimeSheet> GetTimeSheetByCallOffOrderAndRequest(string callOffOrderId, string requestId)
         {
+            if (string.IsNullOrEmpty(callOffOrderId))
+            {
+                throw new ArgumentException("callOffOrderId");
+            }
+
+            if (string.IsNullOrEmpty(requestId))
+            {
+                throw new ArgumentException("requestId");
+            }
+
             return await _queryBuilder.For<Task<TimeSheet>>()
                 .With(new FindByCallOffOrderAndRequest(callOffOrderId, requestId));
         }
@@ -137,6 +182,11 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// <param name="timeSheetId">ID табеля</param>
         public async Task<string> DeleteTimeSheet(string timeSheetId)
         {
+            if (string.IsNullOrEmpty(timeSheetId))
+            {
+                throw new ArgumentException("timeSheetId");
+            }
+
             var context = new DeleteTimeSheetCommandContext
             {
                 Id = timeSheetId
@@ -159,7 +209,7 @@ namespace Cmas.BusinessLayers.TimeSheets
             {
                 timeSheet.Status = TimeSheetStatus.Creating;
             }
-            
+
             var context = new UpdateTimeSheetCommandContext
             {
                 TimeSheet = timeSheet
@@ -170,6 +220,11 @@ namespace Cmas.BusinessLayers.TimeSheets
             return context.TimeSheet.Id;
         }
 
+        /// <summary>
+        /// Обновление статуса табеля
+        /// </summary>
+        /// <param name="timeSheet">Табель</param>
+        /// <param name="status">Новый статус</param>
         public async Task UpdateTimeSheetStatus(TimeSheet timeSheet, TimeSheetStatus status)
         {
             if (status == TimeSheetStatus.None)
@@ -181,36 +236,37 @@ namespace Cmas.BusinessLayers.TimeSheets
             switch (status)
             {
                 case TimeSheetStatus.Empty:
-                    throw new GeneralServiceErrorException(
-                        string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                    throw new GeneralServiceErrorException($"cannot set '{status}' status from '{timeSheet.Status}'");
                 case TimeSheetStatus.Creating:
                     if (timeSheet.Status != TimeSheetStatus.Empty && timeSheet.Status != TimeSheetStatus.Created)
                         throw new GeneralServiceErrorException(
-                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                            $"cannot set '{status}' status from '{timeSheet.Status}'");
                     else
                         timeSheet.Status = status;
                     break;
-                case TimeSheetStatus.Created: 
-                    if (timeSheet.Status != TimeSheetStatus.Empty && timeSheet.Status != TimeSheetStatus.Creating && timeSheet.Status != TimeSheetStatus.Approving)
+                case TimeSheetStatus.Created:
+                    if (timeSheet.Status != TimeSheetStatus.Empty && timeSheet.Status != TimeSheetStatus.Creating &&
+                        timeSheet.Status != TimeSheetStatus.Approving)
                         throw new GeneralServiceErrorException(
-                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                            $"cannot set '{status}' status from '{timeSheet.Status}'");
                     else
                         timeSheet.Status = status;
                     break;
                 case TimeSheetStatus.Approving:
                     if (timeSheet.Status != TimeSheetStatus.Corrected && timeSheet.Status != TimeSheetStatus.Created)
                         throw new GeneralServiceErrorException(
-                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                            $"cannot set '{status}' status from '{timeSheet.Status}'");
                     else
                         timeSheet.Status = status;
                     break;
                 case TimeSheetStatus.Correcting:
                     if (timeSheet.Status != TimeSheetStatus.Approving && timeSheet.Status != TimeSheetStatus.Corrected)
                         throw new GeneralServiceErrorException(
-                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                            $"cannot set '{status}' status from '{timeSheet.Status}'");
                     else
                     {
-                        if (timeSheet.Status == TimeSheetStatus.Approving  && !_claimsPrincipal.HasRoles(new []{ Role.Customer }))
+                        if (timeSheet.Status == TimeSheetStatus.Approving &&
+                            !_claimsPrincipal.HasRoles(new[] {Role.Customer}))
                             throw new ForbiddenErrorException();
 
                         timeSheet.Status = status;
@@ -219,7 +275,7 @@ namespace Cmas.BusinessLayers.TimeSheets
                 case TimeSheetStatus.Corrected:
                     if (timeSheet.Status != TimeSheetStatus.Correcting)
                         throw new GeneralServiceErrorException(
-                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                            $"cannot set '{status}' status from '{timeSheet.Status}'");
                     else
                     {
                         timeSheet.Status = status;
@@ -228,16 +284,16 @@ namespace Cmas.BusinessLayers.TimeSheets
                 case TimeSheetStatus.Approved:
                     if (timeSheet.Status != TimeSheetStatus.Approving)
                         throw new GeneralServiceErrorException(
-                            string.Format("cannot set '{0}' status from {1}", status, timeSheet.Status));
+                            $"cannot set '{status}' status from '{timeSheet.Status}'");
                     else
                     {
-                        if (!_claimsPrincipal.HasRoles(new[] { Role.Customer }))
+                        if (!_claimsPrincipal.HasRoles(new[] {Role.Customer}))
                             throw new ForbiddenErrorException();
 
                         timeSheet.Status = status;
                     }
                     break;
-                
+
                 default:
                     throw new GeneralServiceErrorException("unknown status");
             }
@@ -245,12 +301,15 @@ namespace Cmas.BusinessLayers.TimeSheets
             await UpdateTimeSheet(timeSheet);
         }
 
+        /// <summary>
+        /// Получить сумму по табелю
+        /// </summary>
         public static double GetAmount(double rate, TimeUnit timeUnit, IEnumerable<double> spentTimes)
         {
             double result = 0;
 
             if (spentTimes.Count() > 31)
-                throw new ArgumentException(String.Format("Wrong days count: ({0})", spentTimes.Count()));
+                throw new ArgumentException($"Wrong days count: ({spentTimes.Count()})");
 
             foreach (double spentTime in spentTimes)
             {
@@ -259,6 +318,5 @@ namespace Cmas.BusinessLayers.TimeSheets
 
             return result;
         }
-         
     }
 }
