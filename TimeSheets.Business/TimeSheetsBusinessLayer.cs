@@ -59,8 +59,7 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// </summary>
         /// <param name="callOffOrderId">ID наряд заказа</param>
         /// <returns>ID созданного табеля</returns>
-        public async Task<string> CreateTimeSheet(string callOffOrderId, int month, int year, string requestId,
-            string currencySysName)
+        public async Task<string> CreateTimeSheet(string callOffOrderId, DateTime from, DateTime till, string requestId, string currencySysName)
         {
             if (string.IsNullOrEmpty(callOffOrderId))
             {
@@ -71,24 +70,14 @@ namespace Cmas.BusinessLayers.TimeSheets
             {
                 throw new ArgumentException("requestId");
             }
-
-            if (month < 1 || month > 12)
-            {
-                throw new ArgumentException("month");
-            }
-
-            if (year < 2000)
-            {
-                throw new ArgumentException("year");
-            }
-
+             
             var timeSheet = new TimeSheet();
 
             timeSheet.CreatedAt = DateTime.UtcNow;
             timeSheet.UpdatedAt = DateTime.UtcNow;
             timeSheet.CallOffOrderId = callOffOrderId;
-            timeSheet.Month = month;
-            timeSheet.Year = year;
+            timeSheet.From = from;
+            timeSheet.Till = till;
             timeSheet.RequestId = requestId;
             timeSheet.CurrencySysName = currencySysName;
             timeSheet.Status = TimeSheetStatus.Empty;
@@ -205,6 +194,9 @@ namespace Cmas.BusinessLayers.TimeSheets
         {
             timeSheet.UpdatedAt = DateTime.UtcNow;
 
+            if (timeSheet.SpentTime.Count == 0)
+                timeSheet.Amount = 0;
+             
             if (timeSheet.Status == TimeSheetStatus.Empty)
             {
                 timeSheet.Status = TimeSheetStatus.Creating;
