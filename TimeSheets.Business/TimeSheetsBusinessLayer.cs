@@ -258,7 +258,7 @@ namespace Cmas.BusinessLayers.TimeSheets
                     else
                     {
                         if (timeSheet.Status == TimeSheetStatus.Approving &&
-                            !_claimsPrincipal.HasRoles(new[] {Role.Customer}))
+                            !_claimsPrincipal.HasAnyRole(new[] {Role.Customer}))
                             throw new ForbiddenErrorException();
 
                         timeSheet.Status = status;
@@ -279,7 +279,7 @@ namespace Cmas.BusinessLayers.TimeSheets
                             $"cannot set '{status}' status from '{timeSheet.Status}'");
                     else
                     {
-                        if (!_claimsPrincipal.HasRoles(new[] {Role.Customer}))
+                        if (!_claimsPrincipal.HasAnyRole(new[] {Role.Customer}))
                             throw new ForbiddenErrorException();
 
                         timeSheet.Status = status;
