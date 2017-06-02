@@ -130,6 +130,20 @@ namespace Cmas.BusinessLayers.TimeSheets
         }
 
         /// <summary>
+        /// Получить количество табелей по наряд заказу
+        /// </summary>
+        /// <param name="callOffOrderId">ID наряд заказа</param
+        public async Task<int> CountTimeSheetsByCallOffOrderId(string callOffOrderId)
+        {
+            if (string.IsNullOrEmpty(callOffOrderId))
+            {
+                throw new ArgumentException("callOffOrderId");
+            }
+
+            return await _queryBuilder.For<Task<int>>().With(new FindByCallOffOrderId(callOffOrderId));
+        }
+
+        /// <summary>
         /// Получить табели по заявке
         /// </summary>
         /// <param name="requestId">ID заявки</param
