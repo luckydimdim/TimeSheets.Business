@@ -74,9 +74,15 @@ namespace Cmas.BusinessLayers.TimeSheets.Entities
         /// </summary>
         public string CurrencySysName;
 
+        /// <summary>
+        /// Вложения
+        /// </summary>
+        public Dictionary<string, Attachment> Attachments;
+
         public TimeSheet()
         {
             SpentTime = new Dictionary<string, IEnumerable<double>>();
+            Attachments = new Dictionary<string, Attachment>();
             Status = TimeSheetStatus.None;
             RequestId = null;
         }

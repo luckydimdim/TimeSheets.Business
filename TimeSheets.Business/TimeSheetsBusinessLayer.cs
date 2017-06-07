@@ -11,6 +11,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Cmas.Infrastructure.Security;
+using System.IO;
 
 namespace Cmas.BusinessLayers.TimeSheets
 {
@@ -59,7 +60,8 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// </summary>
         /// <param name="callOffOrderId">ID наряд заказа</param>
         /// <returns>ID созданного табеля</returns>
-        public async Task<string> CreateTimeSheet(string callOffOrderId, DateTime from, DateTime till, string requestId, string currencySysName)
+        public async Task<string> CreateTimeSheet(string callOffOrderId, DateTime from, DateTime till, string requestId,
+            string currencySysName)
         {
             if (string.IsNullOrEmpty(callOffOrderId))
             {
@@ -70,7 +72,7 @@ namespace Cmas.BusinessLayers.TimeSheets
             {
                 throw new ArgumentException("requestId");
             }
-             
+
             var timeSheet = new TimeSheet();
 
             timeSheet.CreatedAt = DateTime.UtcNow;
@@ -210,7 +212,7 @@ namespace Cmas.BusinessLayers.TimeSheets
 
             if (timeSheet.SpentTime.Count == 0)
                 timeSheet.Amount = 0;
-             
+
             if (timeSheet.Status == TimeSheetStatus.Empty)
             {
                 timeSheet.Status = TimeSheetStatus.Creating;
@@ -323,6 +325,101 @@ namespace Cmas.BusinessLayers.TimeSheets
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Добавить вложение
+        /// </summary>
+        public async Task<string> AddAttachment(TimeSheet timeSheet, string fileName, Stream stream, string contentType)
+        {
+            if (timeSheet == null)
+            {
+                throw new ArgumentException("timeSheet");
+            }
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                throw new ArgumentException("fileName");
+            }
+
+            var context = new AddAttachmentCommandContext()
+            {
+                Id = timeSheet.Id,
+                RevId = timeSheet.RevId,
+                ContentType = contentType,
+                Name = fileName
+            };
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                stream.CopyTo(ms);
+                context.Content = ms.ToArray();
+            }
+
+            context = await _commandBuilder.Execute(context);
+
+            return context.AttachmentId;
+        }
+
+        /// <summary>
+        /// Удалить вложение
+        /// </summary>
+        /// <param name="timeSheet"></param>
+        /// <param name="fileName"></param>
+        /// <returns></returns>
+        public async Task DeleteAttachmentAsync(TimeSheet timeSheet, string fileName)
+        {
+            if (timeSheet == null)
+            {
+                throw new ArgumentException("timeSheet");
+            }
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                throw new ArgumentException("fileName");
+            }
+
+            var context = new DeleteAttachmentCommandContext()
+            {
+                Id = timeSheet.Id,
+                RevId = timeSheet.RevId,
+                Name = fileName
+            };
+
+            await _commandBuilder.Execute(context);
+        }
+
+        /// <summary>
+        /// Получить вложение
+        /// </summary>
+        public async Task<Attachment> GetAttachmentAsync(TimeSheet timeSheet, string fileName)
+        {
+            if (timeSheet == null)
+            {
+                throw new ArgumentException("timeSheet");
+            }
+
+            if (string.IsNullOrEmpty(fileName))
+            {
+                throw new ArgumentException("fileName");
+            }
+
+            return await _queryBuilder.For<Task<Attachment>>()
+                .With(new GetAttachment {Id = timeSheet.Id, RevId = timeSheet.RevId, Name = fileName});
+        }
+
+        /// <summary>
+        /// Получить вложения (без данных)
+        /// </summary>
+        public async Task<Attachment[]> GetAttachmentsAsync(string timeSheetId)
+        {
+            if (timeSheetId == null)
+            {
+                throw new ArgumentException("timeSheetId");
+            }
+             
+            return await _queryBuilder.For<Task<Attachment[]>>()
+                .With(new GetAttachments { Id = timeSheetId });
         }
     }
 }
