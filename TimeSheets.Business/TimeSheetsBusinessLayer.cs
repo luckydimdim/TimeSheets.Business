@@ -353,7 +353,7 @@ namespace Cmas.BusinessLayers.TimeSheets
             if (spentTimes.Count() > 31)
                 throw new ArgumentException($"Wrong days count: ({spentTimes.Count()})");
 
-            int monthDaysCount = (int)Math.Round((till - from).TotalDays, MidpointRounding.AwayFromZero);
+            int monthDaysCount = (int) Math.Round((till - from).TotalDays, MidpointRounding.AwayFromZero);
 
             if (monthDaysCount == 0)
                 return 0;
@@ -365,7 +365,7 @@ namespace Cmas.BusinessLayers.TimeSheets
                 workedDays += spentTime > 0 ? 1 : 0;
             }
 
-            return ((double)workedDays / monthDaysCount) * rate;
+            return ((double) workedDays / monthDaysCount) * rate;
         }
 
         /// <summary>
@@ -461,6 +461,45 @@ namespace Cmas.BusinessLayers.TimeSheets
 
             return await _queryBuilder.For<Task<Attachment[]>>()
                 .With(new GetAttachments {Id = timeSheetId});
+        }
+
+        /// <summary>
+        /// Получить доступные периоды для создания табелей по наряд заказу
+        /// </summary>
+        /// <param name="callOffOrderId">ID наряд заказа</param>
+        public async Task<IEnumerable<DateRange>> GetAvailableRanges(string timeSheetId, string callOffOrderId,
+            DateTime callOffFrom, DateTime callOffTill)
+        { 
+            List<DateRange> result = new List<DateRange>();
+
+            var timeSheets = (await GetTimeSheetsByCallOffOrderId(callOffOrderId)).ToList();
+
+            DateTime lastEnd = callOffFrom;
+
+            // отсортированные по дате начала действия
+            var sortedTimeSheets = timeSheets.Where(t => t.Id != timeSheetId).OrderBy(t => t.From);
+
+            foreach (var timesheet in sortedTimeSheets)
+            {
+                TimeSpan diff = timesheet.From - lastEnd;
+
+                if (diff.Days > 0)
+                {
+                    var range = new DateRange(lastEnd, lastEnd.Add(diff).AddSeconds(-1));
+                    result.Add(range);
+                }
+
+                lastEnd = timesheet.Till;
+            }
+
+            TimeSpan lastDiff = callOffTill - lastEnd;
+            if (lastDiff.Days > 0)
+            {
+                var range = new DateRange(callOffTill.Add(-lastDiff).AddSeconds(1), callOffTill);
+                result.Add(range);
+            }
+
+            return result;
         }
     }
 }
