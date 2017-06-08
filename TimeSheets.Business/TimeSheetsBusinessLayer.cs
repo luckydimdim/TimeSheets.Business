@@ -310,9 +310,27 @@ namespace Cmas.BusinessLayers.TimeSheets
         }
 
         /// <summary>
-        /// Получить сумму по табелю
+        /// Получить сумму по табелю для ед.изм - день
         /// </summary>
-        public static double GetAmount(double rate, TimeUnit timeUnit, IEnumerable<double> spentTimes)
+        public static double GetDayAmount(double rate, IEnumerable<double> spentTimes)
+        {
+            double result = 0;
+
+            if (spentTimes.Count() > 31)
+                throw new ArgumentException($"Wrong days count: ({spentTimes.Count()})");
+
+            foreach (double spentTime in spentTimes)
+            {
+                result += rate * (spentTime > 0 ? 1 : 0);
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Получить сумму по табелю для ед.изм - час
+        /// </summary>
+        public static double GetHourAmount(double rate, IEnumerable<double> spentTimes)
         {
             double result = 0;
 
@@ -325,6 +343,29 @@ namespace Cmas.BusinessLayers.TimeSheets
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// Получить сумму по табелю для ед.изм - месяц
+        /// </summary>
+        public static double GetMonthAmount(double rate, IEnumerable<double> spentTimes, DateTime from, DateTime till)
+        {
+            if (spentTimes.Count() > 31)
+                throw new ArgumentException($"Wrong days count: ({spentTimes.Count()})");
+
+            int monthDaysCount = (int)Math.Round((till - from).TotalDays, MidpointRounding.AwayFromZero);
+
+            if (monthDaysCount == 0)
+                return 0;
+
+
+            var workedDays = 0;
+            foreach (double spentTime in spentTimes)
+            {
+                workedDays += spentTime > 0 ? 1 : 0;
+            }
+
+            return ((double)workedDays / monthDaysCount) * rate;
         }
 
         /// <summary>
@@ -417,9 +458,9 @@ namespace Cmas.BusinessLayers.TimeSheets
             {
                 throw new ArgumentException("timeSheetId");
             }
-             
+
             return await _queryBuilder.For<Task<Attachment[]>>()
-                .With(new GetAttachments { Id = timeSheetId });
+                .With(new GetAttachments {Id = timeSheetId});
         }
     }
 }
