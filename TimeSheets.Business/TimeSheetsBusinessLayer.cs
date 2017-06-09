@@ -479,6 +479,12 @@ namespace Cmas.BusinessLayers.TimeSheets
             // отсортированные по дате начала действия
             var sortedTimeSheets = timeSheets.Where(t => t.Id != timeSheetId).OrderBy(t => t.From);
 
+            if (!sortedTimeSheets.Any())
+            { 
+                result.Add(new DateRange(callOffFrom, callOffTill));
+                return result;
+            }
+
             foreach (var timesheet in sortedTimeSheets)
             {
                 TimeSpan diff = timesheet.From - lastEnd;
@@ -492,11 +498,11 @@ namespace Cmas.BusinessLayers.TimeSheets
                 lastEnd = timesheet.Till;
             }
 
+
             TimeSpan lastDiff = callOffTill - lastEnd;
             if (lastDiff.Days > 0)
             {
-                var range = new DateRange(callOffTill.Add(-lastDiff).AddSeconds(1), callOffTill);
-                result.Add(range);
+                result.Add(new DateRange(callOffTill.Add(-lastDiff).AddSeconds(1), callOffTill));
             }
 
             return result;
