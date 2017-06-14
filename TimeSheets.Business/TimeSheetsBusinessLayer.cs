@@ -403,6 +403,54 @@ namespace Cmas.BusinessLayers.TimeSheets
         }
 
         /// <summary>
+        /// Создать токен для скачки файла
+        /// </summary>
+        /// <param name="timeSheetId">ID табеля</param>
+        /// <param name="fileName">Имя файла</param>
+        /// <returns>Токен</returns>
+        public async Task<string> CreateTempAttachmentToken(string timeSheetId, string fileName)
+        {
+            var context = new CreateTempAttachmentTokenContext()
+            {
+                FileName = fileName,
+                TimeSheetId = timeSheetId,
+                Token = Guid.NewGuid().ToString()
+            };
+
+            context = await _commandBuilder.Execute(context);
+
+            return context.Token;
+        }
+
+        /// <summary>
+        /// Удалить токен для скачки файла
+        /// </summary>
+        /// <param name="timeSheetId">ID табеля</param>
+        /// <param name="fileName">Имя файла</param>
+        /// <param name="token">токен</param>
+        public async Task DeleteTempAttachmentToken(string timeSheetId, string fileName, string token)
+        {
+            
+            var context = new DeleteTempAttachmentTokenContext()
+            {
+                FileName = fileName,
+                TimeSheetId = timeSheetId,
+                Token = token
+            };
+
+            context = await _commandBuilder.Execute(context);
+        }
+
+        /// <summary>
+        /// Проверка токена на скачивание файла
+        /// </summary>
+        public async Task<bool> IsTempAttachmentTokenValid(string timeSheetId, string fileName, string token)
+        {
+            return await _queryBuilder.For<Task<bool>>()
+                .With(new IsTempAttachmentTokenValid(timeSheetId, fileName, token));
+        }
+
+        /// <summary>
         /// Удалить вложение
         /// </summary>
         /// <param name="timeSheet"></param>
@@ -469,7 +517,7 @@ namespace Cmas.BusinessLayers.TimeSheets
         /// <param name="callOffOrderId">ID наряд заказа</param>
         public async Task<IEnumerable<DateRange>> GetAvailableRanges(string timeSheetId, string callOffOrderId,
             DateTime callOffFrom, DateTime callOffTill)
-        { 
+        {
             List<DateRange> result = new List<DateRange>();
 
             var timeSheets = (await GetTimeSheetsByCallOffOrderId(callOffOrderId)).ToList();
@@ -480,7 +528,7 @@ namespace Cmas.BusinessLayers.TimeSheets
             var sortedTimeSheets = timeSheets.Where(t => t.Id != timeSheetId).OrderBy(t => t.From);
 
             if (!sortedTimeSheets.Any())
-            { 
+            {
                 result.Add(new DateRange(callOffFrom, callOffTill));
                 return result;
             }
