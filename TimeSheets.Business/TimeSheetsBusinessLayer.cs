@@ -161,6 +161,21 @@ namespace Cmas.BusinessLayers.TimeSheets
         }
 
         /// <summary>
+        /// Получить идентификаторы табелей по заявке
+        /// </summary>
+        /// <param name="requestId">ID заявки</param
+        public async Task<IEnumerable<string>> GetTimeSheetsIdsByRequestId(string requestId)
+        {
+            if (string.IsNullOrEmpty(requestId))
+            {
+                throw new ArgumentException("requestId");
+            }
+
+            return await _queryBuilder.For<Task<IEnumerable<string>>>()
+                .With(new FindByRequestId(requestId));
+        }
+
+        /// <summary>
         /// Получить табель по наряд заказу и заявке
         /// </summary>
         /// <param name="callOffOrderId">ID наряд заказа</param
