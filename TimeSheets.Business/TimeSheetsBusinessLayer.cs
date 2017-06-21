@@ -374,13 +374,13 @@ namespace Cmas.BusinessLayers.TimeSheets
                 return 0;
 
 
-            var workedDays = 0;
+            double workedDays = 0;
             foreach (double spentTime in spentTimes)
             {
-                workedDays += spentTime > 0 ? 1 : 0;
+                workedDays += spentTime;
             }
 
-            return ((double) workedDays / monthDaysCount) * rate;
+            return ((workedDays / monthDaysCount) * rate;
         }
 
         /// <summary>
