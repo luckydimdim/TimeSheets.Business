@@ -380,7 +380,7 @@ namespace Cmas.BusinessLayers.TimeSheets
                 workedDays += spentTime;
             }
 
-            return ((workedDays / monthDaysCount) * rate;
+            return (workedDays / monthDaysCount) * rate;
         }
 
         /// <summary>
